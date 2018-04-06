@@ -5,9 +5,10 @@ var express = require('express'),
     spawn = cp.spawn,
     exec = cp.exec,
     app = express();
-var child,
-    ports,
+var child = {};
+var ports,
     port = 3011;
+
 
 var git = require('simple-git');
 
@@ -26,7 +27,7 @@ function updateApp(req, res)
     cwd: "./" + ((req.query.update != null) ? req.query.update : "")
   }).on('close', function() {
     console.log("npm finished install for: " + req.query.update);
-    if (child[req.query.update]) {
+    if (req.query.update && child[req.query.update]) {
         child[req.query.update].kill();
     }
     if(req.query.update != null) startApp(req);
@@ -35,9 +36,11 @@ function updateApp(req, res)
     }
   });
   install.stdout.on('data', (data) => {
-    console.log('install: ${data}');
+    var str = data.toString()
+    console.log(str);
   });
   install.on('error', (err) => {
+    res.send('error.');
     console.log('Failed to start subprocess:\n' + err);
   });
 }
@@ -46,7 +49,7 @@ function startApp(req)
 {
   if(req.query.update){
     child[req.query.update] = spawn('npm', ['start', ports[req.query.update]], {
-      cwd: "./" + req.query.update)
+      cwd: "./" + req.query.update
     });
     child[req.query.update].stdout.setEncoding('utf8');
     child[req.query.update].stdout.on('data', function (data) {
